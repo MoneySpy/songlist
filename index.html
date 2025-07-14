@@ -238,6 +238,12 @@
 			let songCount = 0;
 			let autoScrollEnabled = true;
 			
+			// 1. สร้างตัวแปร global สำหรับ mock data
+			let mockSongs = [
+				{ SongTitle: "รักเดียว", Artist: "ปู พงษ์สิทธิ์", Name: "สมชาย", status: "pending", key: "1" },
+				{ SongTitle: "ขอใจเธอแลกเบอร์โทร", Artist: "หญิงลี", Name: "สมหญิง", status: "completed", key: "2" }
+			];
+
 			$(document).ready(function(){
 				// ซ่อน loading overlay
 				setTimeout(() => {
@@ -297,31 +303,21 @@
 
 				$('.submit-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...');
 
-				// ส่งข้อมูลไป Google Apps Script Web API
-				fetch('YOUR_APPS_SCRIPT_URL', {
-					method: 'POST',
-					body: JSON.stringify({
-						songTitle: songTitle,
-						artist: artist,
-						requesterName: requesterName
-					}),
-					headers: {
-						'Content-Type': 'application/json'
-					}
-				})
-				.then(res => res.text())
-				.then(() => {
+				// เพิ่มเพลงใหม่เข้า mockSongs
+				mockSongs.push({
+					SongTitle: songTitle,
+					Artist: artist,
+					Name: requesterName,
+					status: "pending",
+					key: (mockSongs.length + 1).toString()
+				});
+
+				setTimeout(() => {
 					showNotification('ส่งคำขอเพลงเรียบร้อยแล้ว!', 'success');
 					clearForm();
-					// อัปเดต UI ตามต้องการ (ถ้าต้องการดึงข้อมูลใหม่จาก Google Sheet ต้องเขียนเพิ่ม)
-				})
-				.catch((error) => {
-					console.error('Error:', error);
-					showNotification('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง', 'error');
-				})
-				.finally(() => {
+					loadSongList();
 					$('.submit-btn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> ส่งคำขอเพลง');
-				});
+				}, 500);
 			}
 			
 			function clearForm() {
@@ -330,14 +326,9 @@
 			}
 			
 			function loadSongList() {
-				// ข้อมูลตัวอย่าง
-				const songs = [
-					{ SongTitle: "รักเดียว", Artist: "ปู พงษ์สิทธิ์", Name: "สมชาย", status: "pending", key: "1" },
-					{ SongTitle: "ขอใจเธอแลกเบอร์โทร", Artist: "หญิงลี", Name: "สมหญิง", status: "completed", key: "2" }
-				];
 				$('#songList').empty();
-				songs.forEach(song => addSongToList(song));
-				songCount = songs.length;
+				mockSongs.forEach(song => addSongToList(song));
+				songCount = mockSongs.length;
 				updateSongCount();
 			}
 			
@@ -365,15 +356,7 @@
 				`;
 				
 				$('#songList').append(songHtml);
-				songCount++;
-				
-				// เลื่อนไปที่เพลงใหม่
-				if (autoScrollEnabled) {
-					setTimeout(() => {
-						const songList = document.getElementById('songList');
-						songList.scrollTop = songList.scrollHeight;
-					}, 100);
-				}
+				// ไม่ต้องเพิ่ม songCount++ ที่นี่
 			}
 			
 			function getStatusText(status) {
