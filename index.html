@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="th">
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<title>ระบบขอเพลง - สำหรับพนักงาน</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<link rel="icon" href="favicon.ico" type="image/x-icon"/>		
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap">
+		<!-- Font Awesome -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+		<!-- Animate.css -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+		<!-- Custom CSS -->
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<!-- Animated Background -->
+		<div class="animated-background">
+			<div class="particles"></div>
+			<div class="floating-notes">
+				<div class="note note-1">♪</div>
+				<div class="note note-2">♫</div>
+				<div class="note note-3">♬</div>
+				<div class="note note-4">♩</div>
+				<div class="note note-5">♪</div>
+				<div class="note note-6">♫</div>
+			</div>
+		</div>
+
+		<div class="container-fluid">
+			<!-- Header -->
+			<div class="main-header animate__animated animate__fadeInDown">
+				<div class="header-content">
+					<div class="header-icon animate__animated animate__pulse animate__infinite">
+						<i class="fas fa-music"></i>
+					</div>
+					<h1 class="animate__animated animate__fadeInUp">ระบบขอเพลง</h1>
+					<p id='time' class="animate__animated animate__fadeInUp animate__delay-1s"></p>
+				</div>
+			</div>
+
+			<div class="row">
+				<!-- ฟอร์มขอเพลง -->
+				<div class="col-lg-4 col-md-6">
+					<div class="request-form-container animate__animated animate__fadeInLeft">
+						<div class="form-header">
+							<div class="form-icon animate__animated animate__bounceIn animate__delay-1s">
+								<i class="fas fa-plus-circle"></i>
+							</div>
+							<h2>ขอเพลงใหม่</h2>
+							<p class="subtitle">สำหรับพนักงาน</p>
+						</div>
+						
+						<form id="songRequestForm" class="request-form">
+							<div class="form-group animate__animated animate__fadeInUp animate__delay-1s">
+								<label for="songTitle">
+									<i class="fas fa-headphones"></i> ชื่อเพลง *
+								</label>
+								<input type="text" class="form-control" id="songTitle" name="songTitle" required placeholder="กรอกชื่อเพลง">
+								<div class="input-focus-effect"></div>
+							</div>
+							
+							<div class="form-group animate__animated animate__fadeInUp animate__delay-2s">
+								<label for="artist">
+									<i class="fas fa-user"></i> ศิลปิน *
+								</label>
+								<input type="text" class="form-control" id="artist" name="artist" required placeholder="กรอกชื่อศิลปิน">
+								<div class="input-focus-effect"></div>
+							</div>
+							
+							<div class="form-group animate__animated animate__fadeInUp animate__delay-3s">
+								<label for="requesterName">
+									<i class="fas fa-user-friends"></i> ผู้ขอ *
+								</label>
+								<input type="text" class="form-control" id="requesterName" name="requesterName" required placeholder="กรอกชื่อผู้ขอ">
+								<div class="input-focus-effect"></div>
+							</div>
+							
+							<div class="form-actions animate__animated animate__fadeInUp animate__delay-4s">
+								<button type="submit" class="btn btn-primary btn-lg btn-block submit-btn">
+									<i class="fas fa-paper-plane"></i> ส่งคำขอเพลง
+									<div class="btn-ripple"></div>
+								</button>
+								<button type="button" class="btn btn-secondary btn-lg btn-block mt-2" onclick="clearForm()">
+									<i class="fas fa-eraser"></i> ล้างฟอร์ม
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
+				<!-- สถิติและรายการเพลง -->
+				<div class="col-lg-8 col-md-6">
+					<!-- สถิติประจำวัน/สัปดาห์/เดือน -->
+					<div class="stats-container animate__animated animate__fadeInRight">
+						<div class="stats-header">
+							<div class="stats-icon animate__animated animate__rotateIn animate__delay-1s">
+								<i class="fas fa-chart-bar"></i>
+							</div>
+							<h3>สถิติการขอเพลง</h3>
+						</div>
+						<div class="row">
+							<div class="col-md-4 col-12">
+								<div class="stat-card animate__animated animate__zoomIn animate__delay-1s">
+									<div class="stat-icon daily animate__animated animate__pulse animate__infinite">
+										<i class="fas fa-calendar-day"></i>
+									</div>
+									<div class="stat-content">
+										<div class="stat-number" id="dailyCount">0</div>
+										<div class="stat-label">วันนี้</div>
+									</div>
+									<div class="stat-glow"></div>
+								</div>
+							</div>
+							<div class="col-md-4 col-12">
+								<div class="stat-card animate__animated animate__zoomIn animate__delay-2s">
+									<div class="stat-icon weekly animate__animated animate__pulse animate__infinite">
+										<i class="fas fa-calendar-week"></i>
+									</div>
+									<div class="stat-content">
+										<div class="stat-number" id="weeklyCount">0</div>
+										<div class="stat-label">สัปดาห์นี้</div>
+									</div>
+									<div class="stat-glow"></div>
+								</div>
+							</div>
+							<div class="col-md-4 col-12">
+								<div class="stat-card animate__animated animate__zoomIn animate__delay-3s">
+									<div class="stat-icon monthly animate__animated animate__pulse animate__infinite">
+										<i class="fas fa-calendar-alt"></i>
+									</div>
+									<div class="stat-content">
+										<div class="stat-number" id="monthlyCount">0</div>
+										<div class="stat-label">เดือนนี้</div>
+									</div>
+									<div class="stat-glow"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Top 10 ผู้ขอ -->
+					<div class="top-requesters-container animate__animated animate__fadeInRight animate__delay-1s">
+						<div class="top-header">
+							<div class="trophy-icon animate__animated animate__tada animate__infinite">
+								<i class="fas fa-trophy"></i>
+							</div>
+							<h3>Top 10 ผู้ขอเพลง</h3>
+						</div>
+						<div class="top-requesters-list" id="topRequestersList">
+							<!-- รายการ Top 10 จะถูกเพิ่มที่นี่ -->
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- รายการเพลงที่ขอ -->
+			<div class="row mt-4">
+				<div class="col-12">
+					<div class="song-list-container animate__animated animate__fadeInUp animate__delay-2s">
+						<div class="list-header">
+							<div class="row">
+								<div class="col-md-6 col-12">
+									<div class="list-title">
+										<div class="list-icon animate__animated animate__bounceIn animate__delay-1s">
+											<i class="fas fa-list"></i>
+										</div>
+										<h3>รายการเพลงที่ขอ</h3>
+									</div>
+								</div>
+								<div class="col-md-6 col-12 text-right">
+									<span class="song-count" id="songCount">0 เพลง</span>
+								</div>
+							</div>
+						</div>
+						
+						<div class="song-list" id="songList">
+							<!-- รายการเพลงจะถูกเพิ่มที่นี่ -->
+						</div>
+						
+						<div class="list-footer">
+							<div class="auto-scroll-info">
+								<i class="fas fa-info-circle animate__animated animate__pulse animate__infinite"></i> 
+								รายการจะเลื่อนอัตโนมัติเมื่อมีเพลงใหม่
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Loading Overlay -->
+		<div class="loading-overlay" id="loadingOverlay">
+			<div class="loading-content">
+				<div class="loading-spinner">
+					<i class="fas fa-music animate__animated animate__spin animate__infinite"></i>
+				</div>
+				<p>กำลังโหลดข้อมูล...</p>
+			</div>
+		</div>
+			
+		<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+		<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+		
+		<!-- Firebase SDKs -->
+		<script src="https://www.gstatic.com/firebasejs/7.15.3/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/7.15.3/firebase-auth.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/7.15.3/firebase-database.js"></script>
+		
+		<script>
+			// Your web app's Firebase configuration
+			var firebaseConfig = {
+				apiKey: "AIzaSyBG0DUbhjeCqVNH18c360fXMnF-tuVljMc",
+				authDomain: "request-song-7201b.firebaseapp.com",
+				databaseURL: "https://request-song-7201b-default-rtdb.firebaseio.com",
+				projectId: "request-song-7201b",
+				storageBucket: "request-song-7201b.appspot.com",
+				messagingSenderId: "15360790179",
+				appId: "1:15360790179:web:af3db16d01b43c20c63916",
+				measurementId: "G-TY3BCCPFRZ"
+			};
+			// Initialize Firebase
+			firebase.initializeApp(firebaseConfig);
+		</script>
+		
+		<script>
+			// get a new date (locale machine date time)
+			let current_datetime = new Date()
+			let formatted_date = current_datetime.getDate() + "-" + (current_datetime.getMonth() + 1) + "-" + current_datetime.getFullYear()
+			document.getElementById('time').innerHTML = 'รายการขอเพลงประจำวันที่ : ' + formatted_date;
+			
+			let songCount = 0;
+			let autoScrollEnabled = true;
+			
+			$(document).ready(function(){
+				// ซ่อน loading overlay
+				setTimeout(() => {
+					$('#loadingOverlay').fadeOut();
+				}, 2000);
+				
+				loadSongList();
+				loadStatistics();
+				loadTopRequesters();
+				setupRealTimeUpdates();
+				
+				// จัดการการส่งฟอร์ม
+				$('#songRequestForm').on('submit', function(e){
+					e.preventDefault();
+					submitSongRequest();
+				});
+				
+				// เพิ่ม animation ให้กับ input fields
+				$('.form-control').on('focus', function() {
+					$(this).parent().addClass('focused');
+				}).on('blur', function() {
+					if (!$(this).val()) {
+						$(this).parent().removeClass('focused');
+					}
+				});
+				
+				// เพิ่ม ripple effect ให้กับปุ่ม
+				$('.submit-btn').on('click', function(e) {
+					const btn = $(this);
+					const ripple = btn.find('.btn-ripple');
+					
+					const x = e.pageX - btn.offset().left;
+					const y = e.pageY - btn.offset().top;
+					
+					ripple.css({
+						left: x + 'px',
+						top: y + 'px'
+					});
+					
+					ripple.addClass('ripple-active');
+					
+					setTimeout(() => {
+						ripple.removeClass('ripple-active');
+					}, 600);
+				});
+			});
+			
+			function submitSongRequest() {
+				const songTitle = $('#songTitle').val().trim();
+				const artist = $('#artist').val().trim();
+				const requesterName = $('#requesterName').val().trim();
+
+				if (!songTitle || !artist || !requesterName) {
+					showNotification('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+					return;
+				}
+
+				$('.submit-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...');
+
+				// ส่งข้อมูลไป Google Apps Script Web API
+				fetch('YOUR_APPS_SCRIPT_URL', {
+					method: 'POST',
+					body: JSON.stringify({
+						songTitle: songTitle,
+						artist: artist,
+						requesterName: requesterName
+					}),
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				})
+				.then(res => res.text())
+				.then(() => {
+					showNotification('ส่งคำขอเพลงเรียบร้อยแล้ว!', 'success');
+					clearForm();
+					// อัปเดต UI ตามต้องการ (ถ้าต้องการดึงข้อมูลใหม่จาก Google Sheet ต้องเขียนเพิ่ม)
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+					showNotification('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง', 'error');
+				})
+				.finally(() => {
+					$('.submit-btn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> ส่งคำขอเพลง');
+				});
+			}
+			
+			function clearForm() {
+				$('#songRequestForm')[0].reset();
+				$('.form-group').removeClass('focused');
+			}
+			
+			function loadSongList() {
+				const todayDate = new Date().toISOString().slice(0,10);
+				const songlistRef = firebase.database().ref('song_list');
+				
+				songlistRef.orderByChild("todayDate").equalTo(todayDate).once("value")
+					.then((snapshot) => {
+						$('#songList').empty();
+						songCount = 0;
+						
+						const songs = [];
+						snapshot.forEach((childSnapshot) => {
+							songs.push({
+								key: childSnapshot.key,
+								...childSnapshot.val()
+							});
+						});
+						
+						// เรียงลำดับตามเวลา (เก่าสุดขึ้นก่อน)
+						songs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+						
+						songs.forEach((song, index) => {
+							setTimeout(() => {
+								addSongToList(song);
+							}, index * 100);
+						});
+						
+						updateSongCount();
+						
+						if (songs.length === 0) {
+							$('#songList').html('<div class="no-songs-message animate__animated animate__fadeIn"><i class="fas fa-music"></i><br>ยังไม่มีรายการขอเพลงวันนี้</div>');
+						}
+					})
+					.catch((error) => {
+						console.error('Error loading songs:', error);
+						$('#songList').html('<div class="error-message animate__animated animate__fadeIn"><i class="fas fa-exclamation-triangle"></i><br>เกิดข้อผิดพลาดในการโหลดข้อมูล</div>');
+					});
+			}
+			
+			function addSongToList(song) {
+				const songHtml = `
+					<div class="song-item animate__animated animate__fadeInUp" data-key="${song.key}">
+						<div class="song-cover animate__animated animate__bounceIn">
+							<i class="fas fa-music"></i>
+						</div>
+						<div class="song-details">
+							<div class="song-title">${song.SongTitle}</div>
+							<div class="song-artist">${song.Artist}</div>
+							<div class="song-customer">
+								<i class="fas fa-user"></i> ${song.Name}
+							</div>
+						</div>
+						<div class="song-amount">
+							<div class="song-status">
+								<span class="status-badge status-${song.status || 'pending'} animate__animated animate__pulse">
+									${getStatusText(song.status || 'pending')}
+								</span>
+							</div>
+						</div>
+					</div>
+				`;
+				
+				$('#songList').append(songHtml);
+				songCount++;
+				
+				// เลื่อนไปที่เพลงใหม่
+				if (autoScrollEnabled) {
+					setTimeout(() => {
+						const songList = document.getElementById('songList');
+						songList.scrollTop = songList.scrollHeight;
+					}, 100);
+				}
+			}
+			
+			function getStatusText(status) {
+				switch(status) {
+					case 'pending': return 'รอเล่น';
+					case 'playing': return 'กำลังเล่น';
+					case 'completed': return 'เล่นแล้ว';
+					default: return 'รอเล่น';
+				}
+			}
+			
+			function updateSongCount() {
+				$('#songCount').text(songCount + ' เพลง');
+			}
+			
+			function loadStatistics() {
+				const todayDate = new Date().toISOString().slice(0,10);
+				const songlistRef = firebase.database().ref('song_list');
+				
+				// นับเพลงวันนี้
+				songlistRef.orderByChild("todayDate").equalTo(todayDate).once("value")
+					.then((snapshot) => {
+						$('#dailyCount').text(snapshot.numChildren());
+					});
+				
+				// นับเพลงสัปดาห์นี้
+				const weekStart = getWeekStart();
+				songlistRef.orderByChild("todayDate").startAt(weekStart).once("value")
+					.then((snapshot) => {
+						$('#weeklyCount').text(snapshot.numChildren());
+					});
+				
+				// นับเพลงเดือนนี้
+				const monthStart = getMonthStart();
+				songlistRef.orderByChild("todayDate").startAt(monthStart).once("value")
+					.then((snapshot) => {
+						$('#monthlyCount').text(snapshot.numChildren());
+					});
+			}
+			
+			function animateCounters() {
+				$('.stat-number').each(function() {
+					const $this = $(this);
+					const countTo = parseInt($this.text());
+					
+					$({ countNum: 0 }).animate({
+						countNum: countTo
+					}, {
+						duration: 1000,
+						easing: 'swing',
+						step: function() {
+							$this.text(Math.floor(this.countNum));
+						},
+						complete: function() {
+							$this.text(this.countNum);
+						}
+					});
+				});
+			}
+			
+			function getWeekStart() {
+				const now = new Date();
+				const dayOfWeek = now.getDay();
+				const diff = now.getDate() - dayOfWeek;
+				const weekStart = new Date(now.setDate(diff));
+				return weekStart.toISOString().slice(0,10);
+			}
+			
+			function getMonthStart() {
+				const now = new Date();
+				return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+			}
+			
+			function loadTopRequesters() {
+				const todayDate = new Date().toISOString().slice(0,10);
+				const songlistRef = firebase.database().ref('song_list');
+				
+				songlistRef.orderByChild("todayDate").equalTo(todayDate).once("value")
+					.then((snapshot) => {
+						const requesters = {};
+						
+						snapshot.forEach((childSnapshot) => {
+							const song = childSnapshot.val();
+							const requester = song.Name;
+							requesters[requester] = (requesters[requester] || 0) + 1;
+						});
+						
+						// เรียงลำดับตามจำนวนการขอ
+						const sortedRequesters = Object.entries(requesters)
+							.sort(([,a], [,b]) => b - a)
+							.slice(0, 10);
+						
+						$('#topRequestersList').empty();
+						
+						if (sortedRequesters.length === 0) {
+							$('#topRequestersList').html('<div class="no-data animate__animated animate__fadeIn">ยังไม่มีข้อมูลผู้ขอ</div>');
+							return;
+						}
+						
+						sortedRequesters.forEach((requester, index) => {
+							const [name, count] = requester;
+							const rank = index + 1;
+							const rankClass = rank <= 3 ? `rank-${rank}` : '';
+							
+							setTimeout(() => {
+								const requesterHtml = `
+									<div class="requester-item ${rankClass} animate__animated animate__fadeInLeft" style="animation-delay: ${index * 0.1}s">
+										<div class="requester-rank">
+											<span class="rank-number">${rank}</span>
+										</div>
+										<div class="requester-info">
+											<div class="requester-name">${name}</div>
+										</div>
+										<div class="requester-count">
+											<span class="count-badge animate__animated animate__pulse animate__infinite">${count} ครั้ง</span>
+										</div>
+									</div>
+								`;
+								
+								$('#topRequestersList').append(requesterHtml);
+							}, index * 100);
+						});
+					})
+					.catch((error) => {
+						console.error('Error loading top requesters:', error);
+						$('#topRequestersList').html('<div class="error-message animate__animated animate__fadeIn">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>');
+					});
+			}
+			
+			function setupRealTimeUpdates() {
+				const todayDate = new Date().toISOString().slice(0,10);
+				const songlistRef = firebase.database().ref('song_list');
+				
+				songlistRef.orderByChild("todayDate").equalTo(todayDate).on("child_added", function(data) {
+					const song = {
+						key: data.key,
+						...data.val()
+					};
+					
+					// ตรวจสอบว่าเพลงนี้มีอยู่แล้วหรือไม่
+					if (!$(`[data-key="${song.key}"]`).length) {
+						addSongToList(song);
+						updateSongCount();
+						loadStatistics();
+						loadTopRequesters();
+					}
+				});
+			}
+			
+			function showNotification(message, type) {
+				const notification = $(`
+					<div class="notification notification-${type} animate__animated animate__fadeInRight">
+						<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+						<span>${message}</span>
+					</div>
+				`);
+				
+				$('body').append(notification);
+				
+				setTimeout(() => {
+					notification.addClass('animate__fadeOutRight');
+					setTimeout(() => {
+						notification.remove();
+					}, 500);
+				}, 3000);
+			}
+			
+			// อัพเดทข้อมูลทุก 30 วินาที
+			setInterval(() => {
+				loadSongList();
+				loadStatistics();
+				loadTopRequesters();
+			}, 30000);
+		</script>
+	</body>
+</html>			
