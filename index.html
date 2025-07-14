@@ -371,8 +371,8 @@
 
 				$('.submit-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...');
 
-				// ส่งข้อมูลไป Google Apps Script Web App
-				fetch('https://script.google.com/macros/s/AKfycbxg9ttxqVghEFasKv3uPrAwKOEocL9l3AuschP5HCVrf2PFErUQ7VpU0LsGoWOB1hM2tg/exec', {
+				// ส่งข้อมูลไป proxy server แทน Google Apps Script Web App
+				fetch('http://localhost:3000/api/song-request', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ name: requesterName, song: songTitle, artist: artist })
@@ -399,16 +399,14 @@
 				$('.form-group').removeClass('focused');
 			}
 			
-			// --- ดึงข้อมูลจาก Google Sheets ผ่าน Apps Script (doGet) ---
+			// --- ดึงข้อมูลจาก proxy server ---
 			function loadSongListFromSheet() {
 				$('#songList').empty();
 				$('#songCount').text('กำลังโหลด...');
-				// เรียก doGet (ต้องเพิ่ม doGet ใน Apps Script)
-				fetch('https://script.google.com/macros/s/AKfycbxg9ttxqVghEFasKv3uPrAwKOEocL9l3AuschP5HCVrf2PFErUQ7VpU0LsGoWOB1hM2tg/exec')
+				fetch('http://localhost:3000/api/song-list')
 					.then(res => res.json())
 					.then(data => {
 						if (Array.isArray(data)) {
-							// data: [[timestamp, name, song, artist], ...]
 							const songs = data.slice(1).map((row, idx) => ({
 								SongTitle: row[2] || '',
 								Artist: row[3] || '',
@@ -417,11 +415,9 @@
 								timestamp: row[0] || '',
 								key: (idx+1).toString()
 							}));
-							// เรียงใหม่-เก่า
 							songs.reverse();
 							songs.slice(0, 10).forEach(addSongToList);
 							$('#songCount').text(songs.length + ' เพลง');
-							// อัพเดทสถิติ/Top 10
 							loadStatisticsFromSongs(songs);
 							loadTopRequestersFromSongs(songs);
 						} else {
