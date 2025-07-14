@@ -330,41 +330,15 @@
 			}
 			
 			function loadSongList() {
-				const todayDate = new Date().toISOString().slice(0,10);
-				const songlistRef = firebase.database().ref('song_list');
-				
-				songlistRef.orderByChild("todayDate").equalTo(todayDate).once("value")
-					.then((snapshot) => {
-						$('#songList').empty();
-						songCount = 0;
-						
-						const songs = [];
-						snapshot.forEach((childSnapshot) => {
-							songs.push({
-								key: childSnapshot.key,
-								...childSnapshot.val()
-							});
-						});
-						
-						// เรียงลำดับตามเวลา (เก่าสุดขึ้นก่อน)
-						songs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-						
-						songs.forEach((song, index) => {
-							setTimeout(() => {
-								addSongToList(song);
-							}, index * 100);
-						});
-						
-						updateSongCount();
-						
-						if (songs.length === 0) {
-							$('#songList').html('<div class="no-songs-message animate__animated animate__fadeIn"><i class="fas fa-music"></i><br>ยังไม่มีรายการขอเพลงวันนี้</div>');
-						}
-					})
-					.catch((error) => {
-						console.error('Error loading songs:', error);
-						$('#songList').html('<div class="error-message animate__animated animate__fadeIn"><i class="fas fa-exclamation-triangle"></i><br>เกิดข้อผิดพลาดในการโหลดข้อมูล</div>');
-					});
+				// ข้อมูลตัวอย่าง
+				const songs = [
+					{ SongTitle: "รักเดียว", Artist: "ปู พงษ์สิทธิ์", Name: "สมชาย", status: "pending", key: "1" },
+					{ SongTitle: "ขอใจเธอแลกเบอร์โทร", Artist: "หญิงลี", Name: "สมหญิง", status: "completed", key: "2" }
+				];
+				$('#songList').empty();
+				songs.forEach(song => addSongToList(song));
+				songCount = songs.length;
+				updateSongCount();
 			}
 			
 			function addSongToList(song) {
@@ -416,28 +390,9 @@
 			}
 			
 			function loadStatistics() {
-				const todayDate = new Date().toISOString().slice(0,10);
-				const songlistRef = firebase.database().ref('song_list');
-				
-				// นับเพลงวันนี้
-				songlistRef.orderByChild("todayDate").equalTo(todayDate).once("value")
-					.then((snapshot) => {
-						$('#dailyCount').text(snapshot.numChildren());
-					});
-				
-				// นับเพลงสัปดาห์นี้
-				const weekStart = getWeekStart();
-				songlistRef.orderByChild("todayDate").startAt(weekStart).once("value")
-					.then((snapshot) => {
-						$('#weeklyCount').text(snapshot.numChildren());
-					});
-				
-				// นับเพลงเดือนนี้
-				const monthStart = getMonthStart();
-				songlistRef.orderByChild("todayDate").startAt(monthStart).once("value")
-					.then((snapshot) => {
-						$('#monthlyCount').text(snapshot.numChildren());
-					});
+				$('#dailyCount').text(2);
+				$('#weeklyCount').text(5);
+				$('#monthlyCount').text(10);
 			}
 			
 			function animateCounters() {
@@ -474,59 +429,18 @@
 			}
 			
 			function loadTopRequesters() {
-				const todayDate = new Date().toISOString().slice(0,10);
-				const songlistRef = firebase.database().ref('song_list');
-				
-				songlistRef.orderByChild("todayDate").equalTo(todayDate).once("value")
-					.then((snapshot) => {
-						const requesters = {};
-						
-						snapshot.forEach((childSnapshot) => {
-							const song = childSnapshot.val();
-							const requester = song.Name;
-							requesters[requester] = (requesters[requester] || 0) + 1;
-						});
-						
-						// เรียงลำดับตามจำนวนการขอ
-						const sortedRequesters = Object.entries(requesters)
-							.sort(([,a], [,b]) => b - a)
-							.slice(0, 10);
-						
-						$('#topRequestersList').empty();
-						
-						if (sortedRequesters.length === 0) {
-							$('#topRequestersList').html('<div class="no-data animate__animated animate__fadeIn">ยังไม่มีข้อมูลผู้ขอ</div>');
-							return;
-						}
-						
-						sortedRequesters.forEach((requester, index) => {
-							const [name, count] = requester;
-							const rank = index + 1;
-							const rankClass = rank <= 3 ? `rank-${rank}` : '';
-							
-							setTimeout(() => {
-								const requesterHtml = `
-									<div class="requester-item ${rankClass} animate__animated animate__fadeInLeft" style="animation-delay: ${index * 0.1}s">
-										<div class="requester-rank">
-											<span class="rank-number">${rank}</span>
-										</div>
-										<div class="requester-info">
-											<div class="requester-name">${name}</div>
-										</div>
-										<div class="requester-count">
-											<span class="count-badge animate__animated animate__pulse animate__infinite">${count} ครั้ง</span>
-										</div>
-									</div>
-								`;
-								
-								$('#topRequestersList').append(requesterHtml);
-							}, index * 100);
-						});
-					})
-					.catch((error) => {
-						console.error('Error loading top requesters:', error);
-						$('#topRequestersList').html('<div class="error-message animate__animated animate__fadeIn">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>');
-					});
+				$('#topRequestersList').html(`
+					<div class="requester-item rank-1 animate__animated animate__fadeInLeft">
+						<div class="requester-rank"><span class="rank-number">1</span></div>
+						<div class="requester-info"><div class="requester-name">สมชาย</div></div>
+						<div class="requester-count"><span class="count-badge animate__animated animate__pulse animate__infinite">3 ครั้ง</span></div>
+					</div>
+					<div class="requester-item rank-2 animate__animated animate__fadeInLeft">
+						<div class="requester-rank"><span class="rank-number">2</span></div>
+						<div class="requester-info"><div class="requester-name">สมหญิง</div></div>
+						<div class="requester-count"><span class="count-badge animate__animated animate__pulse animate__infinite">2 ครั้ง</span></div>
+					</div>
+				`);
 			}
 			
 			function setupRealTimeUpdates() {
