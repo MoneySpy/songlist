@@ -217,64 +217,26 @@
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
 		
 		<!-- Firebase SDKs -->
-		<script src="https://www.gstatic.com/firebasejs/7.15.3/firebase-app.js"></script>
-		<script src="https://www.gstatic.com/firebasejs/7.15.3/firebase-auth.js"></script>
-		<script src="https://www.gstatic.com/firebasejs/7.15.3/firebase-database.js"></script>
-		
-		<script>
-			// Your web app's Firebase configuration
-			var firebaseConfig = {
-				apiKey: "AIzaSyBG0DUbhjeCqVNH18c360fXMnF-tuVljMc",
-				authDomain: "request-song-7201b.firebaseapp.com",
-				databaseURL: "https://request-song-7201b-default-rtdb.firebaseio.com",
-				projectId: "request-song-7201b",
-				storageBucket: "request-song-7201b.appspot.com",
-				messagingSenderId: "15360790179",
-				appId: "1:15360790179:web:af3db16d01b43c20c63916",
-				measurementId: "G-TY3BCCPFRZ"
-			};
-			// Initialize Firebase
-			firebase.initializeApp(firebaseConfig);
-		</script>
-		
+		<!-- ลบ/คอมเมนต์ firebase และ mockSongs/LocalStorage ที่ไม่จำเป็น -->
+		<!-- (ลบ firebase.initializeApp, mockSongs, saveSongsToLocal, loadSongsFromLocal, setupRealTimeUpdates) -->
+
 		<script>
 			// get a new date (locale machine date time)
 			let current_datetime = new Date()
 			let formatted_date = current_datetime.getDate() + "-" + (current_datetime.getMonth() + 1) + "-" + current_datetime.getFullYear()
 			document.getElementById('time').innerHTML = 'รายการขอเพลงประจำวันที่ : ' + formatted_date;
-			
-			let songCount = 0;
-			let autoScrollEnabled = true;
-			
-			// 1. สร้างตัวแปร global สำหรับ mock data
-			let mockSongs = [
-				{ SongTitle: "รักเดียว", Artist: "ปู พงษ์สิทธิ์", Name: "สมชาย", status: "pending", key: "1" },
-				{ SongTitle: "ขอใจเธอแลกเบอร์โทร", Artist: "หญิงลี", Name: "สมหญิง", status: "completed", key: "2" }
-			];
-
-			// ฟังก์ชันบันทึก/โหลด mockSongs จาก Local Storage
-			function saveSongsToLocal() {
-				localStorage.setItem('mockSongs', JSON.stringify(mockSongs));
-			}
-			function loadSongsFromLocal() {
-				const data = localStorage.getItem('mockSongs');
-				if (data) {
-					mockSongs = JSON.parse(data);
-				}
-			}
 
 			$(document).ready(function(){
 				// ซ่อน loading overlay
 				setTimeout(() => {
 					$('#loadingOverlay').fadeOut();
 				}, 2000);
-				
-				loadSongsFromLocal();
-				loadSongList();
-				loadStatistics();
-				loadTopRequesters();
-				setupRealTimeUpdates();
-				
+
+				// โหลดรายการเพลงจาก Google Sheets (ผ่าน Apps Script)
+				loadSongListFromSheet();
+				// โหลดสถิติและ Top 10 (หลังโหลดเพลง)
+				// (จะคำนวณจากข้อมูลที่ดึงมา)
+
 				// จัดการการส่งฟอร์ม
 				$('#songRequestForm').on('submit', function(e){
 					e.preventDefault();
@@ -322,11 +284,12 @@
 						try {
 							const data = JSON.parse(evt.target.result);
 							if (Array.isArray(data)) {
-								mockSongs = data;
-								saveSongsToLocal();
-								loadSongList();
-								loadStatistics();
-								loadTopRequesters();
+								// ลบ/คอมเมนต์โค้ดที่เกี่ยวข้องกับ mockSongs/LocalStorage
+								// mockSongs = data;
+								// saveSongsToLocal();
+								loadSongListFromSheet(); // โหลดข้อมูลใหม่จาก Sheets
+								loadStatisticsFromSongs(data); // อัพเดทสถิติจากข้อมูลที่นำเข้า
+								loadTopRequestersFromSongs(data); // อัพเดท Top 10 จากข้อมูลที่นำเข้า
 								showNotification('นำเข้าข้อมูลสำเร็จ', 'success');
 							} else {
 								showNotification('ไฟล์ไม่ถูกต้อง', 'error');
@@ -340,10 +303,12 @@
 
 				// Export TXT
 				$('#exportTxtBtn').on('click', function() {
-					let txt = 'ชื่อเพลง\tศิลปิน\tผู้ขอ\tสถานะ\tเวลา\n';
-					mockSongs.forEach(song => {
-						txt += `${song.SongTitle}\t${song.Artist}\t${song.Name}\t${song.status || ''}\t${song.timestamp || ''}\n`;
-					});
+					// ลบ/คอมเมนต์โค้ดที่เกี่ยวข้องกับ mockSongs/LocalStorage
+					// let txt = 'ชื่อเพลง\tศิลปิน\tผู้ขอ\tสถานะ\tเวลา\n';
+					// mockSongs.forEach(song => {
+					// 	txt += `${song.SongTitle}\t${song.Artist}\t${song.Name}\t${song.status || ''}\t${song.timestamp || ''}\n`;
+					// });
+					const txt = 'ชื่อเพลง\tศิลปิน\tผู้ขอ\tสถานะ\tเวลา\n';
 					const blob = new Blob([txt], { type: 'text/plain' });
 					const url = URL.createObjectURL(blob);
 					const a = document.createElement('a');
@@ -357,13 +322,15 @@
 
 				// Export CSV
 				$('#exportCsvBtn').on('click', function() {
-					let csv = 'ชื่อเพลง,ศิลปิน,ผู้ขอ,สถานะ,เวลา\n';
-					mockSongs.forEach(song => {
-						// Escape comma and quote
-						const row = [song.SongTitle, song.Artist, song.Name, song.status || '', song.timestamp || '']
-							.map(val => '"' + (val ? val.replace(/"/g, '""') : '') + '"').join(',');
-						csv += row + '\n';
-					});
+					// ลบ/คอมเมนต์โค้ดที่เกี่ยวข้องกับ mockSongs/LocalStorage
+					// let csv = 'ชื่อเพลง,ศิลปิน,ผู้ขอ,สถานะ,เวลา\n';
+					// mockSongs.forEach(song => {
+					// 	// Escape comma and quote
+					// 	const row = [song.SongTitle, song.Artist, song.Name, song.status || '', song.timestamp || '']
+					// 		.map(val => '"' + (val ? val.replace(/"/g, '""') : '') + '"').join(',');
+					// 	csv += row + '\n';
+					// });
+					const csv = 'ชื่อเพลง,ศิลปิน,ผู้ขอ,สถานะ,เวลา\n';
 					const blob = new Blob([csv], { type: 'text/csv' });
 					const url = URL.createObjectURL(blob);
 					const a = document.createElement('a');
@@ -377,6 +344,8 @@
 
 				// Export JSON
 				$('#exportJsonBtn').on('click', function() {
+					// ลบ/คอมเมนต์โค้ดที่เกี่ยวข้องกับ mockSongs/LocalStorage
+					// const json = JSON.stringify(mockSongs, null, 2);
 					const json = JSON.stringify(mockSongs, null, 2);
 					const blob = new Blob([json], { type: 'application/json' });
 					const url = URL.createObjectURL(blob);
@@ -402,25 +371,27 @@
 
 				$('.submit-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...');
 
-				// เพิ่มเพลงใหม่เข้า mockSongs พร้อม timestamp
-				mockSongs.push({
-					SongTitle: songTitle,
-					Artist: artist,
-					Name: requesterName,
-					status: "pending",
-					key: (mockSongs.length + 1).toString(),
-					timestamp: new Date().toISOString()
-				});
-				saveSongsToLocal();
-
-				setTimeout(() => {
-					showNotification('ส่งคำขอเพลงเรียบร้อยแล้ว!', 'success');
-					clearForm();
-					loadSongList();
-					loadStatistics();
-					loadTopRequesters();
+				// ส่งข้อมูลไป Google Apps Script Web App
+				fetch('https://script.google.com/macros/s/AKfycbxg9ttxqVghEFasKv3uPrAwKOEocL9l3AuschP5HCVrf2PFErUQ7VpU0LsGoWOB1hM2tg/exec', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ name: requesterName, song: songTitle, artist: artist })
+				})
+				.then(res => res.json())
+				.then(data => {
+					if (data.result === "success") {
+						showNotification('ส่งคำขอเพลงเรียบร้อยแล้ว!', 'success');
+						clearForm();
+						loadSongListFromSheet(); // โหลดข้อมูลใหม่
+					} else {
+						showNotification('เกิดข้อผิดพลาด: ' + JSON.stringify(data), 'error');
+					}
 					$('.submit-btn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> ส่งคำขอเพลง');
-				}, 500);
+				})
+				.catch(err => {
+					showNotification('Error: ' + err, 'error');
+					$('.submit-btn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> ส่งคำขอเพลง');
+				});
 			}
 			
 			function clearForm() {
@@ -428,30 +399,38 @@
 				$('.form-group').removeClass('focused');
 			}
 			
-			function loadSongList() {
+			// --- ดึงข้อมูลจาก Google Sheets ผ่าน Apps Script (doGet) ---
+			function loadSongListFromSheet() {
 				$('#songList').empty();
-				// เรียงจากใหม่ไปเก่า (timestamp ล่าสุดก่อน)
-				const sorted = [...mockSongs].sort((a, b) => {
-					const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-					const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-					return tB - tA;
-				});
-				// เอาแค่ 10 เพลงล่าสุด
-				const now = Date.now();
-				sorted.slice(0, 10).forEach(song => {
-					// ถ้า timestamp เกิน 5 นาที ให้เปลี่ยนสถานะเป็น 'เล่นแล้ว'
-					if (song.timestamp) {
-						const diff = now - new Date(song.timestamp).getTime();
-						if (diff > 5 * 60 * 1000) {
-							song.status = 'completed';
+				$('#songCount').text('กำลังโหลด...');
+				// เรียก doGet (ต้องเพิ่ม doGet ใน Apps Script)
+				fetch('https://script.google.com/macros/s/AKfycbxg9ttxqVghEFasKv3uPrAwKOEocL9l3AuschP5HCVrf2PFErUQ7VpU0LsGoWOB1hM2tg/exec')
+					.then(res => res.json())
+					.then(data => {
+						if (Array.isArray(data)) {
+							// data: [[timestamp, name, song, artist], ...]
+							const songs = data.slice(1).map((row, idx) => ({
+								SongTitle: row[2] || '',
+								Artist: row[3] || '',
+								Name: row[1] || '',
+								status: 'pending',
+								timestamp: row[0] || '',
+								key: (idx+1).toString()
+							}));
+							// เรียงใหม่-เก่า
+							songs.reverse();
+							songs.slice(0, 10).forEach(addSongToList);
+							$('#songCount').text(songs.length + ' เพลง');
+							// อัพเดทสถิติ/Top 10
+							loadStatisticsFromSongs(songs);
+							loadTopRequestersFromSongs(songs);
+						} else {
+							$('#songCount').text('0 เพลง');
 						}
-					}
-					addSongToList(song);
-				});
-				songCount = Math.min(sorted.length, 10);
-				updateSongCount();
+					})
+					.catch(() => $('#songCount').text('0 เพลง'));
 			}
-			
+
 			function addSongToList(song) {
 				const songHtml = `
 					<div class="song-item animate__animated animate__fadeInUp" data-key="${song.key}">
@@ -474,11 +453,9 @@
 						</div>
 					</div>
 				`;
-				
 				$('#songList').append(songHtml);
-				// ไม่ต้องเพิ่ม songCount++ ที่นี่
 			}
-			
+
 			function getStatusText(status) {
 				switch(status) {
 					case 'pending': return 'รอเล่น';
@@ -488,15 +465,10 @@
 				}
 			}
 			
-			function updateSongCount() {
-				$('#songCount').text(songCount + ' เพลง');
-			}
-			
-			function loadStatistics() {
+			// --- สถิติและ Top 10 จาก songs ---
+			function loadStatisticsFromSongs(songs) {
 				const now = new Date();
 				const todayStr = now.toISOString().slice(0, 10);
-
-				// Helper: เช็คว่าสัปดาห์เดียวกันไหม
 				function isSameWeek(date1, date2) {
 					const d1 = new Date(date1);
 					const d2 = new Date(date2);
@@ -508,17 +480,13 @@
 					d2.setDate(d2.getDate() - day2 + 1);
 					return d1.getTime() === d2.getTime();
 				}
-
-				// Helper: เช็คว่าเดือนเดียวกันไหม
 				function isSameMonth(date1, date2) {
 					const d1 = new Date(date1);
 					const d2 = new Date(date2);
 					return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
 				}
-
 				let daily = 0, weekly = 0, monthly = 0;
-				mockSongs.forEach(song => {
-					// ถ้าไม่มี timestamp ให้ถือว่าเป็นวันนี้
+				songs.forEach(song => {
 					let songDate = song.timestamp ? new Date(song.timestamp) : now;
 					let songDateStr = songDate.toISOString().slice(0, 10);
 					if (songDateStr === todayStr) daily++;
@@ -529,45 +497,11 @@
 				$('#weeklyCount').text(weekly);
 				$('#monthlyCount').text(monthly);
 			}
-			
-			function animateCounters() {
-				$('.stat-number').each(function() {
-					const $this = $(this);
-					const countTo = parseInt($this.text());
-					
-					$({ countNum: 0 }).animate({
-						countNum: countTo
-					}, {
-						duration: 1000,
-						easing: 'swing',
-						step: function() {
-							$this.text(Math.floor(this.countNum));
-						},
-						complete: function() {
-							$this.text(this.countNum);
-						}
-					});
-				});
-			}
-			
-			function getWeekStart() {
-				const now = new Date();
-				const dayOfWeek = now.getDay();
-				const diff = now.getDate() - dayOfWeek;
-				const weekStart = new Date(now.setDate(diff));
-				return weekStart.toISOString().slice(0,10);
-			}
-			
-			function getMonthStart() {
-				const now = new Date();
-				return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-			}
-			
-			function loadTopRequesters() {
-				// นับจำนวนการขอเพลงของแต่ละคน (เฉพาะเดือนนี้) และเก็บเวลาขอล่าสุด
+
+			function loadTopRequestersFromSongs(songs) {
 				const now = new Date();
 				const requesters = {};
-				mockSongs.forEach(song => {
+				songs.forEach(song => {
 					let songDate = song.timestamp ? new Date(song.timestamp) : now;
 					if (songDate.getFullYear() === now.getFullYear() && songDate.getMonth() === now.getMonth()) {
 						const name = song.Name;
@@ -575,13 +509,11 @@
 							requesters[name] = { count: 0, last: songDate };
 						}
 						requesters[name].count++;
-						// ถ้าเวลานี้ใหม่กว่า last เดิม ให้เก็บเป็น last
 						if (songDate > requesters[name].last) {
 							requesters[name].last = songDate;
 						}
 					}
 				});
-				// เรียงลำดับมากไปน้อย เอาแค่ 10 อันดับแรก
 				const sorted = Object.entries(requesters)
 					.sort((a, b) => b[1].count - a[1].count)
 					.slice(0, 10);
@@ -593,15 +525,12 @@
 				sorted.forEach(([name, info], index) => {
 					const rank = index + 1;
 					const rankClass = rank <= 3 ? `rank-${rank}` : '';
-					// ฟอร์แมตเวลา
 					const last = info.last;
 					const nowDate = new Date();
 					let timeStr = '';
 					if (last.toDateString() === nowDate.toDateString()) {
-						// วันนี้ แสดง HH:mm:ss
 						timeStr = last.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 					} else {
-						// วันอื่น แสดง dd/MM/yyyy HH:mm
 						timeStr = last.toLocaleDateString('th-TH') + ' ' + last.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 					}
 					const html = `
@@ -618,26 +547,6 @@
 				});
 			}
 			
-			function setupRealTimeUpdates() {
-				const todayDate = new Date().toISOString().slice(0,10);
-				const songlistRef = firebase.database().ref('song_list');
-				
-				songlistRef.orderByChild("todayDate").equalTo(todayDate).on("child_added", function(data) {
-					const song = {
-						key: data.key,
-						...data.val()
-					};
-					
-					// ตรวจสอบว่าเพลงนี้มีอยู่แล้วหรือไม่
-					if (!$(`[data-key="${song.key}"]`).length) {
-						addSongToList(song);
-						updateSongCount();
-						loadStatistics();
-						loadTopRequesters();
-					}
-				});
-			}
-			
 			function showNotification(message, type) {
 				const notification = $(`
 					<div class="notification notification-${type} animate__animated animate__fadeInRight">
@@ -645,9 +554,7 @@
 						<span>${message}</span>
 					</div>
 				`);
-				
 				$('body').append(notification);
-				
 				setTimeout(() => {
 					notification.addClass('animate__fadeOutRight');
 					setTimeout(() => {
@@ -658,9 +565,7 @@
 			
 			// อัพเดทข้อมูลทุก 30 วินาที
 			setInterval(() => {
-				loadSongList();
-				loadStatistics();
-				loadTopRequesters();
+				loadSongListFromSheet();
 			}, 30000);
 		</script>
 	</body>
