@@ -191,6 +191,12 @@
 					</div>
 				</div>
 			</div>
+			<!-- ปุ่ม Export ข้อมูล -->
+			<div class="mt-3 mb-3">
+				<button id="exportTxtBtn" class="btn btn-info btn-sm mr-2"><i class="fas fa-download"></i> ดาวน์โหลด .txt</button>
+				<button id="exportCsvBtn" class="btn btn-success btn-sm mr-2"><i class="fas fa-file-csv"></i> ดาวน์โหลด .csv</button>
+				<button id="exportJsonBtn" class="btn btn-warning btn-sm"><i class="fas fa-file-code"></i> ดาวน์โหลด .json</button>
+			</div>
 		</div>
 
 		<!-- Loading Overlay -->
@@ -289,6 +295,57 @@
 						ripple.removeClass('ripple-active');
 					}, 600);
 				});
+
+				// Export TXT
+				$('#exportTxtBtn').on('click', function() {
+					let txt = 'ชื่อเพลง\tศิลปิน\tผู้ขอ\tสถานะ\tเวลา\n';
+					mockSongs.forEach(song => {
+						txt += `${song.SongTitle}\t${song.Artist}\t${song.Name}\t${song.status || ''}\t${song.timestamp || ''}\n`;
+					});
+					const blob = new Blob([txt], { type: 'text/plain' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = 'songlist.txt';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+				});
+
+				// Export CSV
+				$('#exportCsvBtn').on('click', function() {
+					let csv = 'ชื่อเพลง,ศิลปิน,ผู้ขอ,สถานะ,เวลา\n';
+					mockSongs.forEach(song => {
+						// Escape comma and quote
+						const row = [song.SongTitle, song.Artist, song.Name, song.status || '', song.timestamp || '']
+							.map(val => '"' + (val ? val.replace(/"/g, '""') : '') + '"').join(',');
+						csv += row + '\n';
+					});
+					const blob = new Blob([csv], { type: 'text/csv' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = 'songlist.csv';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+				});
+
+				// Export JSON
+				$('#exportJsonBtn').on('click', function() {
+					const json = JSON.stringify(mockSongs, null, 2);
+					const blob = new Blob([json], { type: 'application/json' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = 'songlist.json';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+				});
 			});
 			
 			function submitSongRequest() {
@@ -303,19 +360,22 @@
 
 				$('.submit-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...');
 
-				// เพิ่มเพลงใหม่เข้า mockSongs
+				// เพิ่มเพลงใหม่เข้า mockSongs พร้อม timestamp
 				mockSongs.push({
 					SongTitle: songTitle,
 					Artist: artist,
 					Name: requesterName,
 					status: "pending",
-					key: (mockSongs.length + 1).toString()
+					key: (mockSongs.length + 1).toString(),
+					timestamp: new Date().toISOString()
 				});
 
 				setTimeout(() => {
 					showNotification('ส่งคำขอเพลงเรียบร้อยแล้ว!', 'success');
 					clearForm();
 					loadSongList();
+					loadStatistics();
+					loadTopRequesters();
 					$('.submit-btn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> ส่งคำขอเพลง');
 				}, 500);
 			}
@@ -327,8 +387,25 @@
 			
 			function loadSongList() {
 				$('#songList').empty();
-				mockSongs.forEach(song => addSongToList(song));
-				songCount = mockSongs.length;
+				// เรียงจากใหม่ไปเก่า (timestamp ล่าสุดก่อน)
+				const sorted = [...mockSongs].sort((a, b) => {
+					const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+					const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+					return tB - tA;
+				});
+				// เอาแค่ 10 เพลงล่าสุด
+				const now = Date.now();
+				sorted.slice(0, 10).forEach(song => {
+					// ถ้า timestamp เกิน 5 นาที ให้เปลี่ยนสถานะเป็น 'เล่นแล้ว'
+					if (song.timestamp) {
+						const diff = now - new Date(song.timestamp).getTime();
+						if (diff > 5 * 60 * 1000) {
+							song.status = 'completed';
+						}
+					}
+					addSongToList(song);
+				});
+				songCount = Math.min(sorted.length, 10);
 				updateSongCount();
 			}
 			
@@ -373,9 +450,41 @@
 			}
 			
 			function loadStatistics() {
-				$('#dailyCount').text(2);
-				$('#weeklyCount').text(5);
-				$('#monthlyCount').text(10);
+				const now = new Date();
+				const todayStr = now.toISOString().slice(0, 10);
+
+				// Helper: เช็คว่าสัปดาห์เดียวกันไหม
+				function isSameWeek(date1, date2) {
+					const d1 = new Date(date1);
+					const d2 = new Date(date2);
+					const day1 = d1.getDay() || 7;
+					const day2 = d2.getDay() || 7;
+					d1.setHours(0,0,0,0);
+					d2.setHours(0,0,0,0);
+					d1.setDate(d1.getDate() - day1 + 1);
+					d2.setDate(d2.getDate() - day2 + 1);
+					return d1.getTime() === d2.getTime();
+				}
+
+				// Helper: เช็คว่าเดือนเดียวกันไหม
+				function isSameMonth(date1, date2) {
+					const d1 = new Date(date1);
+					const d2 = new Date(date2);
+					return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
+				}
+
+				let daily = 0, weekly = 0, monthly = 0;
+				mockSongs.forEach(song => {
+					// ถ้าไม่มี timestamp ให้ถือว่าเป็นวันนี้
+					let songDate = song.timestamp ? new Date(song.timestamp) : now;
+					let songDateStr = songDate.toISOString().slice(0, 10);
+					if (songDateStr === todayStr) daily++;
+					if (isSameWeek(songDate, now)) weekly++;
+					if (isSameMonth(songDate, now)) monthly++;
+				});
+				$('#dailyCount').text(daily);
+				$('#weeklyCount').text(weekly);
+				$('#monthlyCount').text(monthly);
 			}
 			
 			function animateCounters() {
@@ -412,18 +521,58 @@
 			}
 			
 			function loadTopRequesters() {
-				$('#topRequestersList').html(`
-					<div class="requester-item rank-1 animate__animated animate__fadeInLeft">
-						<div class="requester-rank"><span class="rank-number">1</span></div>
-						<div class="requester-info"><div class="requester-name">สมชาย</div></div>
-						<div class="requester-count"><span class="count-badge animate__animated animate__pulse animate__infinite">3 ครั้ง</span></div>
-					</div>
-					<div class="requester-item rank-2 animate__animated animate__fadeInLeft">
-						<div class="requester-rank"><span class="rank-number">2</span></div>
-						<div class="requester-info"><div class="requester-name">สมหญิง</div></div>
-						<div class="requester-count"><span class="count-badge animate__animated animate__pulse animate__infinite">2 ครั้ง</span></div>
-					</div>
-				`);
+				// นับจำนวนการขอเพลงของแต่ละคน (เฉพาะเดือนนี้) และเก็บเวลาขอล่าสุด
+				const now = new Date();
+				const requesters = {};
+				mockSongs.forEach(song => {
+					let songDate = song.timestamp ? new Date(song.timestamp) : now;
+					if (songDate.getFullYear() === now.getFullYear() && songDate.getMonth() === now.getMonth()) {
+						const name = song.Name;
+						if (!requesters[name]) {
+							requesters[name] = { count: 0, last: songDate };
+						}
+						requesters[name].count++;
+						// ถ้าเวลานี้ใหม่กว่า last เดิม ให้เก็บเป็น last
+						if (songDate > requesters[name].last) {
+							requesters[name].last = songDate;
+						}
+					}
+				});
+				// เรียงลำดับมากไปน้อย เอาแค่ 10 อันดับแรก
+				const sorted = Object.entries(requesters)
+					.sort((a, b) => b[1].count - a[1].count)
+					.slice(0, 10);
+				$('#topRequestersList').empty();
+				if (sorted.length === 0) {
+					$('#topRequestersList').html('<div class="no-data animate__animated animate__fadeIn">ยังไม่มีข้อมูลผู้ขอ</div>');
+					return;
+				}
+				sorted.forEach(([name, info], index) => {
+					const rank = index + 1;
+					const rankClass = rank <= 3 ? `rank-${rank}` : '';
+					// ฟอร์แมตเวลา
+					const last = info.last;
+					const nowDate = new Date();
+					let timeStr = '';
+					if (last.toDateString() === nowDate.toDateString()) {
+						// วันนี้ แสดง HH:mm:ss
+						timeStr = last.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+					} else {
+						// วันอื่น แสดง dd/MM/yyyy HH:mm
+						timeStr = last.toLocaleDateString('th-TH') + ' ' + last.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+					}
+					const html = `
+						<div class="requester-item ${rankClass} animate__animated animate__fadeInLeft">
+							<div class="requester-rank"><span class="rank-number">${rank}</span></div>
+							<div class="requester-info">
+								<div class="requester-name">${name}</div>
+								<div class="requester-time" style="font-size:12px;color:#888;">ล่าสุด: ${timeStr}</div>
+							</div>
+							<div class="requester-count"><span class="count-badge animate__animated animate__pulse animate__infinite">${info.count} ครั้ง</span></div>
+						</div>
+					`;
+					$('#topRequestersList').append(html);
+				});
 			}
 			
 			function setupRealTimeUpdates() {
